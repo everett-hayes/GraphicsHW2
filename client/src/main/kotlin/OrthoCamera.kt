@@ -10,6 +10,7 @@ class OrthoCamera(vararg programs : Program) : UniformProvider("camera") {
     
   val viewProjMatrix by Mat4()
   val viewProjMatrixInverse by Mat4()  
+  
   init{
     updateViewProjMatrix()
     addComponentsAndGatherUniforms(*programs)

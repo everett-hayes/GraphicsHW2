@@ -13,30 +13,29 @@ class Scene (
   //TODO: derive from UniformProvider
   {
 
-  // val time by Vec1()
-
-  // init {
-  //   addComponentsAndGatherUniforms(*Program.all)
-  // }
-
   val vsTrafo = Shader(gl, GL.VERTEX_SHADER, "trafo-vs.glsl")
   val fsSolid = Shader(gl, GL.FRAGMENT_SHADER, "solid-fs.glsl")
+  val vsTextured = Shader(gl, GL.VERTEX_SHADER, "textured-vs.glsl")
+  val fsTextured = Shader(gl, GL.FRAGMENT_SHADER, "textured-fs.glsl")
   val solidProgram = Program(gl, vsTrafo, fsSolid)
   val redMaterial = Material(solidProgram)
   val cyanMaterial = Material(solidProgram)
+  val greenMaterial = Material(solidProgram)
   val highlightMaterial = Material(solidProgram)
 
-  //TODO: create various materials with different solidColor settings
   init {
     redMaterial["solidColor"]?.set(1.0f, 0.1f, 0.0f)
     cyanMaterial["solidColor"]?.set(0.0f, 1.0f, 1.0f)
-    highlightMaterial["solidColor"]?.set(0.0f, 0.5f, 0.5f)
+    greenMaterial["solidColor"]?.set(0.1f, 1.0f, 0.1f)
+    highlightMaterial["solidColor"]?.set(1.0f, 1.0f, 0.0f)
   }
 
   val triangleGeometry = TriangleGeometry(gl)
+  val textQuadGeometry = TexturedQuadGeometry(gl)
 
   val triangleMesh = Mesh(redMaterial, triangleGeometry);
   val otherTriangleMesh = Mesh(cyanMaterial, triangleGeometry);
+  val otherOtherTriangleMesh = Mesh(greenMaterial, triangleGeometry);
   val meshes = ArrayList<Mesh>()
   var selectedIndex : Int? = null;
   val gameObjects = ArrayList<GameObject>()
@@ -44,10 +43,11 @@ class Scene (
   init {
     meshes += triangleMesh;
     meshes += otherTriangleMesh;
+    meshes += otherOtherTriangleMesh;
 
     for (mesh in meshes) {
 
-      val avatar = object : GameObject(triangleMesh) {
+      val avatar = object : GameObject(mesh) {
         override fun move(
           dt : Float,
           t : Float,
@@ -88,7 +88,7 @@ class Scene (
   } 
 
   val camera = OrthoCamera(*Program.all).apply {
-    position.set(1f, 1f)
+    position.set(0f, 0f)
     updateViewProjMatrix()
   }
 
@@ -127,11 +127,7 @@ class Scene (
 
   fun addNewObject()  {
 
-    console.log("adding a new object!!");
-
     val newMeshIndex = (0..(meshes.size - 1)).random();
-
-    console.log("the new index is " + newMeshIndex);
 
     val avatar = object : GameObject(meshes[newMeshIndex]) {
       override fun move(
@@ -212,7 +208,15 @@ class Scene (
       }
     }
 
-    // gameObjects[1].roll += dt
+    if ("z" in keysPressed) {
+      camera.windowSize *= 1.05f;
+      camera.updateViewProjMatrix();
+    }
+
+    if ("x" in keysPressed) {
+      camera.windowSize *= 0.95f;
+      camera.updateViewProjMatrix();
+    }
 
     for (i in gameObjects.indices) {
       if (i == selectedIndex) continue;
@@ -225,6 +229,7 @@ class Scene (
     }
 
     if (selectedIndex != null) {
+      // only the selectedIndex can be moved
       gameObjects[selectedIndex!!].move(dt, t, keysPressed, gameObjects)
       gameObjects[selectedIndex!!].update()
       gameObjects[selectedIndex!!].using(highlightMaterial).draw(camera)
